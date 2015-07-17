@@ -37,13 +37,14 @@ public class PlayerController : MonoBehaviour {
 
     void CheckFloorContact()
     {
-        float rayLength = playerHeight / 2;
+        float maxDistance = playerHeight / 2;
+        // Raycast a todo elemento en la capa "Floor" posicionado debajo a cualquier distancia
         RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
-        // Si la distancia es menor o igual al largo del rayo máximo, y la distancia no es 0 (que querría decir una distancia infinita)
+        // Si la distancia es menor o igual a la distancia máxima, y la distancia no es 0 (que querría decir una distancia infinita)
         // es que está tocando el suelo
-        isTouchingFloor = hit.distance <= rayLength && hit.distance != 0 ? true : false;
+        isTouchingFloor = hit.distance <= maxDistance && hit.distance != 0 ? true : false;
 
-        distanceToFloor = hit.distance !=0 ? (hit.distance - rayLength) : Mathf.Infinity;
+        distanceToFloor = hit.distance !=0 ? (hit.distance - maxDistance) : Mathf.Infinity;
     }
 
     void ApplyMovement()
