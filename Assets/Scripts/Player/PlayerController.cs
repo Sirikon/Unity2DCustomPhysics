@@ -70,18 +70,13 @@ public class PlayerController : MonoBehaviour {
         animator = GetComponent<Animator>();
         initialPosition = transform.position;
     }
-
-	// Use this for initialization
-	void Start () {
-        
-	}
 	
-	// Update is called once per frame
-	void Update () {
+    void Update()
+    {
         CheckFloorContact();
         ApplyGravity();
         ApplyMovement();
-	}
+    }
 
     void CheckFloorContact()
     {
