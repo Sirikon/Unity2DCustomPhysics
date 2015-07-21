@@ -54,6 +54,7 @@ public class PlayerController : MonoBehaviour {
     float playerWidth;
     Animator animator;
     Vector3 initialPosition;
+    Vector3 previousPosition;
 
     /* Ground Collision Control */
     bool isGrounded = false;
@@ -79,13 +80,16 @@ public class PlayerController : MonoBehaviour {
         playerWidth = spriteRenderer.sprite.bounds.size.x * transform.localScale.x;
         animator = GetComponent<Animator>();
         initialPosition = transform.position;
+        previousPosition = initialPosition;
     }
 	
     void Update()
     {
-        CheckGrounded();
         CheckInput();
+        CheckGrounded();
+        SavePosition();
         ApplyJump();
+        CheckGrounded();
         ApplyGravity();
         ApplyMovement();
     }
@@ -100,8 +104,10 @@ public class PlayerController : MonoBehaviour {
         RaycastHit2D hit_bottom_left = Physics2D.Raycast(ray_bottom_left_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
         RaycastHit2D hit_bottom_right = Physics2D.Raycast(ray_bottom_right_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
 
-        bool isGroundedLeft = hit_bottom_left.distance <= rayLength;
-        bool isGroundedRight = hit_bottom_right.distance <= rayLength;
+        float previousFrameYDiff = transform.position.y - previousPosition.y;
+
+        bool isGroundedLeft = hit_bottom_left.distance == rayLength || (hit_bottom_left.distance <= rayLength && hit_bottom_left.distance - previousFrameYDiff >= rayLength);
+        bool isGroundedRight = hit_bottom_right.distance == rayLength || (hit_bottom_right.distance <= rayLength && hit_bottom_right.distance - previousFrameYDiff >= rayLength);
 
         isGrounded = isGroundedLeft || isGroundedRight;
 
@@ -187,6 +193,11 @@ public class PlayerController : MonoBehaviour {
             isFalling = true;
         }
         Debug.Log(isFalling);
+    }
+
+    public void SavePosition()
+    {
+        previousPosition = transform.position;
     }
 
     public void ResetPosition()
