@@ -77,6 +77,7 @@ public class PlayerController : MonoBehaviour {
     /* Jump */
     bool isJumping = false;
     float jumpStartTime = 0;
+    bool groundedAfterJump = true;
 
     void Awake()
     {
@@ -139,7 +140,12 @@ public class PlayerController : MonoBehaviour {
         isGrounded = (isGroundedLeft || isGroundedRight) && isFalling;
 
         if (isGrounded && isFalling)
+        {
             isJumping = false;
+            groundedAfterJump = true;
+        }
+            
+        
     }
 
     void CheckInput()
@@ -191,9 +197,10 @@ public class PlayerController : MonoBehaviour {
 
     void ApplyJump()
     {
-        if(inputJump)
+        if(inputJump && groundedAfterJump && isGrounded)
         {
             isJumping = true;
+            groundedAfterJump = false;
             jumpStartTime = Time.time;
         }
 
