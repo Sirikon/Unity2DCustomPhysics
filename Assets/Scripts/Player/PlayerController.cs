@@ -127,15 +127,15 @@ public class PlayerController : MonoBehaviour {
 
     void CheckDistanceToGround()
     {
-        distanceToGround = Mathf.Min(hit_bottom_left.distance, hit_bottom_right.distance) - rayLength;
+        distanceToGround = (hit_bottom_left.collider || hit_bottom_right.collider) ? Mathf.Min(hit_bottom_left.distance, hit_bottom_right.distance) - rayLength : Mathf.Infinity;
     }
 
     void CheckGrounded()
     {
         float previousFrameYDiff = transform.position.y - previousPosition.y;
 
-        bool isGroundedLeft = hit_bottom_left.distance == rayLength || (hit_bottom_left.distance <= rayLength && hit_bottom_left.distance - previousFrameYDiff >= rayLength);
-        bool isGroundedRight = hit_bottom_right.distance == rayLength || (hit_bottom_right.distance <= rayLength && hit_bottom_right.distance - previousFrameYDiff >= rayLength);
+        bool isGroundedLeft = (hit_bottom_left.distance == rayLength || (hit_bottom_left.distance <= rayLength && hit_bottom_left.distance - previousFrameYDiff >= rayLength)) && hit_bottom_left.collider;
+        bool isGroundedRight = (hit_bottom_right.distance == rayLength || (hit_bottom_right.distance <= rayLength && hit_bottom_right.distance - previousFrameYDiff >= rayLength)) && hit_bottom_right.collider;
 
         isGrounded = (isGroundedLeft || isGroundedRight) && isFalling;
 
@@ -144,8 +144,6 @@ public class PlayerController : MonoBehaviour {
             isJumping = false;
             groundedAfterJump = true;
         }
-            
-        
     }
 
     void CheckInput()
