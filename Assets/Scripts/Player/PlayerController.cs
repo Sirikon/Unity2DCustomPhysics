@@ -92,6 +92,8 @@ public class PlayerController : MonoBehaviour {
     {
         // Read input from the user
         CheckInput();
+        // Apply horizontal movement
+        ApplyMovement();
         // Update raycasts, check distance to floor and collisions
         UpdateRaycasts();
         CheckDistanceToGround();
@@ -105,15 +107,14 @@ public class PlayerController : MonoBehaviour {
         CheckDistanceToGround();
         // Apply gravity and movement
         ApplyGravity();
-        ApplyMovement();
     }
 
     void UpdateRaycasts()
     {
-        rayLength = playerHeight / 2;
+        rayLength = playerHeight * 0;
         // Ray positions
-        ray_bottom_left_position = new Vector3(transform.position.x - (playerWidth / 2), transform.position.y);
-        ray_bottom_right_position = new Vector3(transform.position.x + (playerWidth / 2), transform.position.y);
+        ray_bottom_left_position = new Vector3(transform.position.x - (playerWidth / 2), transform.position.y - (playerHeight * 0.5f));
+        ray_bottom_right_position = new Vector3(transform.position.x + (playerWidth / 2), transform.position.y - (playerHeight * 0.5f));
 
         // Raycast to every element at the "Floor" layer over the player at any distance
         hit_bottom_left = Physics2D.Raycast(ray_bottom_left_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
@@ -135,7 +136,7 @@ public class PlayerController : MonoBehaviour {
         bool isGroundedLeft = hit_bottom_left.distance == rayLength || (hit_bottom_left.distance <= rayLength && hit_bottom_left.distance - previousFrameYDiff >= rayLength);
         bool isGroundedRight = hit_bottom_right.distance == rayLength || (hit_bottom_right.distance <= rayLength && hit_bottom_right.distance - previousFrameYDiff >= rayLength);
 
-        isGrounded = isGroundedLeft || isGroundedRight;
+        isGrounded = (isGroundedLeft || isGroundedRight) && isFalling;
 
         if (isGrounded && isFalling)
             isJumping = false;
@@ -213,7 +214,6 @@ public class PlayerController : MonoBehaviour {
         {
             isFalling = true;
         }
-        Debug.Log(isFalling);
     }
 
     public void SavePosition()
