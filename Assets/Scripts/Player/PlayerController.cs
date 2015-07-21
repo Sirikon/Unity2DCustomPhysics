@@ -42,78 +42,95 @@ public static class Ease
 
 public class PlayerController : MonoBehaviour {
 
+    /* Public/Tweakable vars */
     public float gravity;
     public float speed;
-    public float jumpTime;
-    public float flyAccelerationTime;
+    public float jumpForce;
+    public float jumpForceDuration;
 
+    /* Initial Vars */
     SpriteRenderer spriteRenderer;
-    Animator animator;
     float playerHeight;
-
-    bool isTouchingFloor = false;
-    bool jumping = false;
-    float jumpStartTime = 0;
-    bool lastJumpTouchedFloor;
-
-    GameObject touchingFloor;
-    float distanceToFloor = 0f;
+    float playerWidth;
+    Animator animator;
     Vector3 initialPosition;
 
-    float flyStartTime = 0;
+    /* Ground Collision Control */
+    bool isGrounded = false;
+    float distanceToGround = 0f;
+
+    /* Input */
+    float horizontalAxis = 0f;
+    bool inputJump = false;
+
+    /* Gravity */
     Ease.Mode gravityEasingMode = Ease.Mode.Linear;
+    float flyStartTime = 0;
+    bool isFalling = false;
+
+    /* Jump */
+    bool isJumping = false;
+    float jumpStartTime = 0;
 
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         playerHeight = spriteRenderer.sprite.bounds.size.y * transform.localScale.y;
+        playerWidth = spriteRenderer.sprite.bounds.size.x * transform.localScale.x;
         animator = GetComponent<Animator>();
         initialPosition = transform.position;
     }
 	
     void Update()
     {
-        CheckFloorContact();
+        CheckGrounded();
+        CheckInput();
+        ApplyJump();
         ApplyGravity();
         ApplyMovement();
     }
 
-    void CheckFloorContact()
+    void CheckGrounded()
     {
-        float maxDistance = playerHeight / 2;
-        // Raycast a todo elemento en la capa "Floor" posicionado debajo a cualquier distancia
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
-        // Si la distancia es menor o igual a la distancia máxima, y la distancia no es 0 (que querría decir una distancia infinita)
-        // es que está tocando el suelo
-        bool result = hit.distance <= maxDistance && hit.distance != 0 ? true : false;
+        float rayLength = playerHeight / 2;
+        // Ray positions
+        Vector3 ray_bottom_left_position = new Vector3(transform.position.x - (playerWidth / 2), transform.position.y);
+        Vector3 ray_bottom_right_position = new Vector3(transform.position.x + (playerWidth / 2), transform.position.y);
+        // Raycast to every element at the "Floor" layer over the player at any distance
+        RaycastHit2D hit_bottom_left = Physics2D.Raycast(ray_bottom_left_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
+        RaycastHit2D hit_bottom_right = Physics2D.Raycast(ray_bottom_right_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
 
-        if (isTouchingFloor && !result && !jumping)
-        {
-            flyStartTime = Time.time;
-            gravityEasingMode = Ease.Mode.Linear;
-        }
-            
+        bool isGroundedLeft = hit_bottom_left.distance <= rayLength;
+        bool isGroundedRight = hit_bottom_right.distance <= rayLength;
 
-        isTouchingFloor = result;
+        isGrounded = isGroundedLeft || isGroundedRight;
 
-        if (isTouchingFloor)
-            lastJumpTouchedFloor = true;
+        if (isGrounded && isJumping && isFalling)
+            isJumping = false;
 
-        distanceToFloor = hit.distance !=0 ? (hit.distance - maxDistance) : Mathf.Infinity;
+        distanceToGround = Mathf.Min(hit_bottom_left.distance, hit_bottom_right.distance) - rayLength;
+
+        Debug.DrawLine(ray_bottom_left_position, hit_bottom_left.point, isGrounded ? Color.green : Color.red);
+        Debug.DrawLine(ray_bottom_right_position, hit_bottom_right.point, isGrounded ? Color.green : Color.red);
+    }
+
+    void CheckInput()
+    {
+        horizontalAxis = Input.GetAxis("Horizontal");
+        inputJump = Input.GetButtonDown("Jump");
     }
 
     void ApplyMovement()
     {
         Vector3 direction;
-        float hAxis = Input.GetAxis("Horizontal");
 
-        if (hAxis < 0)
+        if (horizontalAxis < 0)
         {
             animator.SetBool("Walking", true);
             transform.localScale = new Vector3(-1, 1, 1);
             direction = Vector3.left;
         }
-        else if (hAxis > 0)
+        else if (horizontalAxis > 0)
         {
             animator.SetBool("Walking", true);
             transform.localScale = new Vector3(1, 1, 1);
@@ -125,57 +142,51 @@ public class PlayerController : MonoBehaviour {
             direction = Vector3.zero;
         }
 
-        transform.Translate((direction * speed) * Time.smoothDeltaTime);
+        transform.Translate(direction * speed * Time.smoothDeltaTime);
     }
 
     
     void ApplyGravity()
     {
-        if (Input.GetButtonDown("Jump") && !jumping && lastJumpTouchedFloor && isTouchingFloor)
+        if (!isGrounded)
         {
-            jumpStartTime = Time.time;
-            flyStartTime = Time.time;
-            gravityEasingMode = Ease.Mode.RIn;
-            jumping = true;
-            lastJumpTouchedFloor = false;
-        }
+            Vector3 positionModifier = (Vector3.down * gravity * Time.smoothDeltaTime);
 
-        if (Time.time - jumpStartTime >= jumpTime)
-        {
-            if (jumping)
-            {
-                flyStartTime = Time.time;
-                gravityEasingMode = Ease.Mode.In;
-            }
-            
-            jumping = false;
-        }
-            
-
-        if (!isTouchingFloor || jumping)
-        {
-            Vector3 direction = jumping ? Vector3.up : Vector3.down;
-            float lerpValue = Mathf.Min((Time.time - flyStartTime) / flyAccelerationTime, 1);
-            
-            switch (gravityEasingMode)
-            {
-                case Ease.Mode.In:
-                    lerpValue = Ease.In(lerpValue);
-                    break;
-                case Ease.Mode.RIn:
-                    lerpValue = Ease.RIn(lerpValue);
-                    break;
-            }
-
-            Vector3 positionModifier = (direction * Mathf.Lerp(0, gravity, lerpValue) * Time.smoothDeltaTime);
-
-            // Si el modificador de altura es mayor a la distancia con el suelo, avanza sólo la distancia restante
-            // hasta el suelo, así prevenimos que se incruste en el suelo
-            if (-positionModifier.y > distanceToFloor )
-                positionModifier.Set(positionModifier.x, -distanceToFloor, positionModifier.z);
+            // If the position modifier is higher than the distance to the floor, just forward that
+            // this way we prevent traspassing the floor
+            if ( -positionModifier.y > distanceToGround && isFalling )
+                positionModifier.Set(positionModifier.x, -distanceToGround, positionModifier.z);
 
             transform.Translate(positionModifier);
         }
+    }
+
+    void ApplyJump()
+    {
+        if(inputJump)
+        {
+            isJumping = true;
+            jumpStartTime = Time.time;
+        }
+
+        if(Time.time - jumpStartTime >= jumpForceDuration)
+        {
+            isJumping = false;
+        }
+
+        if (isJumping)
+        {
+            float lerpValue = (Time.time - jumpStartTime) / jumpForceDuration;
+            float lerpedJumpForce = Mathf.Lerp(jumpForce, 0, lerpValue);
+            isFalling = lerpedJumpForce <= gravity ? true : false;
+            Vector3 positionModifier = (Vector3.up * lerpedJumpForce * Time.smoothDeltaTime);
+            transform.Translate(positionModifier);
+        }
+        else
+        {
+            isFalling = true;
+        }
+        Debug.Log(isFalling);
     }
 
     public void ResetPosition()
