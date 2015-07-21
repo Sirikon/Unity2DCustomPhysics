@@ -59,6 +59,11 @@ public class PlayerController : MonoBehaviour {
     /* Ground Collision Control */
     bool isGrounded = false;
     float distanceToGround = 0f;
+    float rayLength;
+    Vector3 ray_bottom_left_position;
+    Vector3 ray_bottom_right_position;
+    RaycastHit2D hit_bottom_left;
+    RaycastHit2D hit_bottom_right;
 
     /* Input */
     float horizontalAxis = 0f;
@@ -85,25 +90,46 @@ public class PlayerController : MonoBehaviour {
 	
     void Update()
     {
+        // Read input from the user
         CheckInput();
+        // Update raycasts, check distance to floor and collisions
+        UpdateRaycasts();
+        CheckDistanceToGround();
         CheckGrounded();
+        // Save actual position
         SavePosition();
+        // Apply the Jump physics
         ApplyJump();
-        CheckGrounded();
+        // Update distance to ground after jump
+        UpdateRaycasts();
+        CheckDistanceToGround();
+        // Apply gravity and movement
         ApplyGravity();
         ApplyMovement();
     }
 
+    void UpdateRaycasts()
+    {
+        rayLength = playerHeight / 2;
+        // Ray positions
+        ray_bottom_left_position = new Vector3(transform.position.x - (playerWidth / 2), transform.position.y);
+        ray_bottom_right_position = new Vector3(transform.position.x + (playerWidth / 2), transform.position.y);
+
+        // Raycast to every element at the "Floor" layer over the player at any distance
+        hit_bottom_left = Physics2D.Raycast(ray_bottom_left_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
+        hit_bottom_right = Physics2D.Raycast(ray_bottom_right_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
+
+        Debug.DrawLine(ray_bottom_left_position, hit_bottom_left.point, Color.red);
+        Debug.DrawLine(ray_bottom_right_position, hit_bottom_right.point, Color.red);
+    }
+
+    void CheckDistanceToGround()
+    {
+        distanceToGround = Mathf.Min(hit_bottom_left.distance, hit_bottom_right.distance) - rayLength;
+    }
+
     void CheckGrounded()
     {
-        float rayLength = playerHeight / 2;
-        // Ray positions
-        Vector3 ray_bottom_left_position = new Vector3(transform.position.x - (playerWidth / 2), transform.position.y);
-        Vector3 ray_bottom_right_position = new Vector3(transform.position.x + (playerWidth / 2), transform.position.y);
-        // Raycast to every element at the "Floor" layer over the player at any distance
-        RaycastHit2D hit_bottom_left = Physics2D.Raycast(ray_bottom_left_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
-        RaycastHit2D hit_bottom_right = Physics2D.Raycast(ray_bottom_right_position, Vector2.down, Mathf.Infinity, LayerMask.GetMask("Floor"));
-
         float previousFrameYDiff = transform.position.y - previousPosition.y;
 
         bool isGroundedLeft = hit_bottom_left.distance == rayLength || (hit_bottom_left.distance <= rayLength && hit_bottom_left.distance - previousFrameYDiff >= rayLength);
@@ -111,13 +137,8 @@ public class PlayerController : MonoBehaviour {
 
         isGrounded = isGroundedLeft || isGroundedRight;
 
-        if (isGrounded && isJumping && isFalling)
+        if (isGrounded && isFalling)
             isJumping = false;
-
-        distanceToGround = Mathf.Min(hit_bottom_left.distance, hit_bottom_right.distance) - rayLength;
-
-        Debug.DrawLine(ray_bottom_left_position, hit_bottom_left.point, isGrounded ? Color.green : Color.red);
-        Debug.DrawLine(ray_bottom_right_position, hit_bottom_right.point, isGrounded ? Color.green : Color.red);
     }
 
     void CheckInput()
