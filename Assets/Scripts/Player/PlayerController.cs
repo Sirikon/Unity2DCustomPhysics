@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEditor;
 
 public static class Ease
 {
@@ -47,6 +48,9 @@ public class PlayerController : MonoBehaviour {
     public float speed;
     public float jumpForce;
     public float jumpForceDuration;
+    public bool controlledByUser = true;
+    [Range(-1, 1)]
+    public int defaultHorizontalAxis;
 
     /* Initial Vars */
     SpriteRenderer spriteRenderer;
@@ -148,8 +152,15 @@ public class PlayerController : MonoBehaviour {
 
     void CheckInput()
     {
-        horizontalAxis = Input.GetAxis("Horizontal");
-        inputJump = Input.GetButtonDown("Jump");
+        if(controlledByUser)
+        {
+            horizontalAxis = Input.GetAxis("Horizontal");
+            inputJump = Input.GetButtonDown("Jump");
+        }
+        else
+        {
+            horizontalAxis = defaultHorizontalAxis;
+        }
     }
 
     void ApplyMovement()
