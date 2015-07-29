@@ -39,7 +39,7 @@ public class BulletManagerController : MonoBehaviour {
         bulletCount++;
         bullet.transform.parent = this.gameObject.transform;
         bullet.SetActive(false);
-        bullet.name = "Bullet #" + bulletCount.ToString() + " (Disabled)";
+        bullet.name = "Bullet #" + bulletCount.ToString() + " (New)";
     }
 
     int GetInactiveBulletIndex()
@@ -69,6 +69,7 @@ public class BulletManagerController : MonoBehaviour {
         // Bullet's direction depends on where is the player looking to
         bulletController.direction = direction;
         activeBullets++;
+        Debug.Log("Spawned");
     }
 
     void Despawn(int i)
@@ -79,7 +80,7 @@ public class BulletManagerController : MonoBehaviour {
         bulletController.direction = Vector3.zero;
         bullet.SetActive(false);
         bulletActive[i] = false;
-        bullet.name = "Bullet #" + i.ToString() + " (Disabled)";
+        bullet.name = "Bullet #" + i.ToString() + " (Despawned)";
         activeBullets--;
     }
 }
