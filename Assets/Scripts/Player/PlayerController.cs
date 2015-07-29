@@ -59,6 +59,7 @@ public class PlayerController : MonoBehaviour {
     Animator animator;
     Vector3 initialPosition;
     Vector3 previousPosition;
+    BulletManagerController bulletManager;
 
     /* Ground Collision Control */
     bool isGrounded = false;
@@ -72,6 +73,7 @@ public class PlayerController : MonoBehaviour {
     /* Input */
     float horizontalAxis = 0f;
     bool inputJump = false;
+    bool inputShoot = false;
 
     /* Gravity */
     Ease.Mode gravityEasingMode = Ease.Mode.Linear;
@@ -91,12 +93,15 @@ public class PlayerController : MonoBehaviour {
         animator = GetComponent<Animator>();
         initialPosition = transform.position;
         previousPosition = initialPosition;
+        bulletManager = FindObjectOfType<BulletManagerController>();
     }
 	
     void Update()
     {
         // Read input from the user
         CheckInput();
+        // Shoot
+        Shoot();
         // Apply horizontal movement
         ApplyMovement();
         // Update raycasts, check distance to floor and collisions
@@ -112,6 +117,14 @@ public class PlayerController : MonoBehaviour {
         CheckDistanceToGround();
         // Apply gravity and movement
         ApplyGravity();
+    }
+
+    void Shoot()
+    {
+        if (inputShoot)
+        {
+            bulletManager.Spawn(this.transform.position, this.transform.localScale.x == 1 ? Vector3.right : Vector3.left);
+        }
     }
 
     void UpdateRaycasts()
@@ -156,6 +169,7 @@ public class PlayerController : MonoBehaviour {
         {
             horizontalAxis = Input.GetAxis("Horizontal");
             inputJump = Input.GetButtonDown("Jump");
+            inputShoot = Input.GetButtonDown("Shoot");
         }
         else
         {
