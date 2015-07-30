@@ -11,6 +11,19 @@ public class BulletManagerController : MonoBehaviour {
     int bulletCount = 0;
     int activeBullets = 0;
 
+    float maxBulletDistance = 0;
+
+    /* Components */
+    Camera camera;
+
+    void Awake()
+    {
+        camera = GameObject.Find("Camera").GetComponent<Camera>();
+        float cameraHeight = 2f * camera.orthographicSize;
+        float cameraWidth = cameraHeight * camera.aspect;
+        maxBulletDistance = Mathf.Max(cameraWidth, cameraHeight);
+    }
+
 	// Update is called once per frame
 	void Update () {
         DespawnInvisibleActiveBullets();
@@ -20,7 +33,7 @@ public class BulletManagerController : MonoBehaviour {
     {
         for(int i = 0; i < bulletCount; i++)
         {
-            if (!bulletRenderers[i].isVisible && bulletActive[i])
+            if (bulletActive[i] && bulletControllers[i].distance >= maxBulletDistance)
             {
                 Despawn(i);
             }
@@ -66,10 +79,10 @@ public class BulletManagerController : MonoBehaviour {
         bullet.name = "Bullet #"+i.ToString();
         // The bullet's initial position is the player's position
         bullet.transform.position = position;
+        bulletController.ResetStartDistance();
         // Bullet's direction depends on where is the player looking to
         bulletController.direction = direction;
         activeBullets++;
-        Debug.Log("Spawned");
     }
 
     void Despawn(int i)
